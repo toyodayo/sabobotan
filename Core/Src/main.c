@@ -70,8 +70,6 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  // 追加
-  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);  
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -95,7 +93,7 @@ int main(void)
   MX_FDCAN1_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);  
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -109,9 +107,9 @@ int main(void)
   HAL_Delay(2000);
   __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,70);
   HAL_Delay(2000);
-  __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,125);
+  __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,800);
   HAL_Delay(2000);
-  __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,70);
+  __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,400);
   HAL_Delay(2000);
   }
   /* USER CODE END 3 */
