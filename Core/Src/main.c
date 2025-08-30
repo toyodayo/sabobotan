@@ -45,7 +45,11 @@ FDCAN_HandleTypeDef hfdcan1;
 TIM_HandleTypeDef htim2;
 
 /* USER CODE BEGIN PV */
-
+typedef struct {
+    uint8_t step[2];
+} Sabomota_t;
+Sabomota_t servo1 = {{51, 99}};  
+Sabomota_t servo2 = {{51, 99}}; 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -54,7 +58,30 @@ static void MX_GPIO_Init(void);
 static void MX_FDCAN1_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
+void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
+{
+    FDCAN_RxHeaderTypeDef rxHeader;
+    uint8_t rxData[8];
 
+    if(HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
+    {
+        switch(rxData[0])
+        {
+            case 1: 
+                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, servo1.step[0]);
+                break;
+            case 2: l
+                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, servo1.step[1]);
+                break;
+            case 3: 
+                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, servo2.step[0]);
+                break;
+            case 4:
+                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, servo2.step[1]);
+                break;
+        }
+    }
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -101,16 +128,13 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
     /* USER CODE BEGIN 3 */
-  __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,51);
-  HAL_Delay(2000);
-  __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,60);
-  HAL_Delay(2000);
-  __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,80);
-  HAL_Delay(2000);
-  __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,99);
-  HAL_Delay(2000);
+  //  __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,70);
+  // HAL_Delay(1000);
+  // __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,80);
+  // HAL_Delay(1000);
+  // __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,99);
+  // HAL_Delay(5000);
   }
   /* USER CODE END 3 */
 }
@@ -204,7 +228,7 @@ static void MX_FDCAN1_Init(void)
 
 }
 
-/**
+/** 
   * @brief TIM2 Initialization Function
   * @param None
   * @retval None
