@@ -50,8 +50,8 @@ typedef struct {
     uint8_t state;        // 現在どちらの状態か (0 or 1)
     uint8_t last_button;  // 前回のボタン状態を記録
 } Sabomota_t;             //注意このプログラムはフィルタリングしていない
-Sabomota_t servo1 = {{51, 99},0,0};  //pinはPA0      //大事    //大事    //大事
-Sabomota_t servo2 = {{51, 99},0,0};  //pinはPB11     //大事    //大事    //大事
+Sabomota_t servo1 = {{51, 99},0,0};  //pinはPA0      //大事    //大事    //大事　　//大事   //大事
+Sabomota_t servo2 = {{51, 99},0,0};  //pinはPB11     //大事    //大事    //大事    //大事   //大事
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -65,7 +65,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
     FDCAN_RxHeaderTypeDef rxHeader;
     uint8_t rxData[8];
 
-    if(HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
+    if(HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)  //データ受信の確認
     {
 
         uint8_t L1 = (rxData[7] & (1 << 4)) ? 1 : 0;
@@ -77,7 +77,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
                 servo1.state = 1;        //2回目押すときは!servo1.last_buttonが条件式を満たさない
             } else {
                 __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, servo1.step[1]);
-                servo1.state = 0;
+                servo1.state = 0;   
             }
         }
         servo1.last_button = L1;
@@ -118,10 +118,10 @@ int main(void)
   /* USER CODE BEGIN Init */
   HAL_Init();
   SystemClock_Config();
-  MX_GPIO_Init();
+  MX_GPIO_Init();   //初期化関数まとめ
   MX_FDCAN1_Init();
   MX_TIM2_Init();
-  HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
+  HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);  //いらない可能性あり、よく理解できていない
   HAL_FDCAN_Start(&hfdcan1);
   /* USER CODE END Init */
 
@@ -135,7 +135,7 @@ int main(void)
   /* Initialize all configured peripherals */
   /* USER CODE BEGIN 2 */
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1); 
-  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2); 
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);   //サーボモータ2つであるのでpwm制御するpinも2つ必要
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -146,8 +146,8 @@ int main(void)
     /* USER CODE BEGIN 3 */
   //  __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,70);
   // HAL_Delay(1000);
-  // __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,80);
-  // HAL_Delay(1000);
+  // __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,80);  //動作確認用のプログラム
+  // HAL_Delay(1000);                                 //canの所をコメントアウトしてここをコメントじゃなくする。
   // __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,99);
   // HAL_Delay(5000);
   }
@@ -226,7 +226,7 @@ static void MX_FDCAN1_Init(void)
   hfdcan1.Init.NominalSyncJumpWidth = 1;
   hfdcan1.Init.NominalTimeSeg1 = 1;
   hfdcan1.Init.NominalTimeSeg2 = 1;
-  hfdcan1.Init.DataPrescaler = 1;
+  hfdcan1.Init.DataPrescaler = 1;    //canの数値設定
   hfdcan1.Init.DataSyncJumpWidth = 1;
   hfdcan1.Init.DataTimeSeg1 = 1;
   hfdcan1.Init.DataTimeSeg2 = 1;
@@ -264,8 +264,8 @@ static void MX_TIM2_Init(void)   //注意このプログラムはフィルタリ
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 1599;
-  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 999;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;    //タイマー関連
+  htim2.Init.Period = 999;    
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
