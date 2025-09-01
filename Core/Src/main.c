@@ -45,14 +45,14 @@ FDCAN_HandleTypeDef hfdcan1;
 TIM_HandleTypeDef htim2;
 
 /* USER CODE BEGIN PV */
-typedef struct {
-    uint8_t step[2];      //2個動かす
-    uint8_t state;        // 現在どちらの状態か (0 or 1)
-    uint8_t last_button;  // 前回のボタン状態を記録
-} Sabomota_t;             //注意このプログラムはフィルタリングしていない
-Sabomota_t servo1 = {{51, 99},0,0};  //pinはPA0      //大事    //大事    //大事　　//大事   //大事
-Sabomota_t servo2 = {{51, 99},0,0};  //pinはPB11     //大事    //大事    //大事    //大事   //大事
-/* USER CODE END PV */
+// typedef struct {
+//     uint8_t step[2];      //2個動かす
+//     uint8_t state;        // 現在どちらの状態か (0 or 1)
+//     uint8_t last_button;  // 前回のボタン状態を記録
+// } Sabomota_t;             //注意このプログラムはフィルタリングしていない
+// Sabomota_t servo1 = {{80, 94},0,0}; 主同期の角度  //pinはPA0      //大事    //大事    //大事　　//大事   //大事
+// Sabomota_t servo2 = {{51, 88},0,0}; 主同期じゃないやつ //pinはPA1      //大事    //大事    //大事    //大事   //大事
+// /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
@@ -60,40 +60,40 @@ static void MX_GPIO_Init(void);
 static void MX_FDCAN1_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
-void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)  //callback関数はmainの中に入れなくてもいい
-{
-    FDCAN_RxHeaderTypeDef rxHeader;
-    uint8_t rxData[8];
+// void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)  //callback関数はmainの中に入れなくてもいい
+// {
+//     FDCAN_RxHeaderTypeDef rxHeader;
+//     uint8_t rxData[8];
 
-    if(HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)  //データ受信の確認
-    {
+//     if(HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)  //データ受信の確認
+//     {
 
-        uint8_t L1 = (rxData[7] & (1 << 4)) ? 1 : 0;
-        uint8_t L2 = (rxData[7] & (1 << 5)) ? 1 : 0;
+//         uint8_t L1 = (rxData[7] & (1 << 4)) ? 1 : 0;
+//         uint8_t L2 = (rxData[7] & (1 << 5)) ? 1 : 0;
 
-        if (L1 && !servo1.last_button) { //注意このプログラムはフィルタリングされていない
-            if (servo1.state == 0) {     //1回目押すときlast_buttonは0、よってL1 && !servo1.last_buttonは条件式を満たす
-                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, servo1.step[0]);
-                servo1.state = 1;        //2回目押すときは!servo1.last_buttonが条件式を満たさない
-            } else {
-                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, servo1.step[1]);
-                servo1.state = 0;   
-            }
-        }
-        servo1.last_button = L1;
+//         if (L1 && !servo1.last_button) { //注意このプログラムはフィルタリングされていない
+//             if (servo1.state == 0) {     //1回目押すときlast_buttonは0、よってL1 && !servo1.last_buttonは条件式を満たす
+//                 __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, servo1.step[0]);
+//                 servo1.state = 1;        //2回目押すときは!servo1.last_buttonが条件式を満たさない
+//             } else {
+//                 __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, servo1.step[1]);
+//                 servo1.state = 0;   
+//             }                       
+//         }
+//         servo1.last_button = L1;
 
-        if (L2 && !servo2.last_button) { 
-            if (servo2.state == 0) {
-                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, servo2.step[0]);
-                servo2.state = 1;
-            } else {
-                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, servo2.step[1]);
-                servo2.state = 0;
-            }//注意このプログラムはフィルタリングされていない
-        }
-        servo2.last_button = L2;
-    }
-}
+//         if (L2 && !servo2.last_button) { 
+//             if (servo2.state == 0) {
+//                 __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, servo2.step[0]);
+//                 servo2.state = 1;
+//             } else {
+//                 __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, -servo2.step[1]);
+//                 servo2.state = 0;
+//             }//注意このプログラムはフィルタリングされていない
+//         }
+//         servo2.last_button = L2;
+//     }
+// }
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -121,8 +121,8 @@ int main(void)
   MX_GPIO_Init();   //初期化関数まとめ
   MX_FDCAN1_Init();
   MX_TIM2_Init();
-  HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);  //いらない可能性あり、よく理解できていない
-  HAL_FDCAN_Start(&hfdcan1);
+  // HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);  //いらない可能性あり、よく理解できていない
+  // HAL_FDCAN_Start(&hfdcan1);
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -135,24 +135,22 @@ int main(void)
   /* Initialize all configured peripherals */
   /* USER CODE BEGIN 2 */
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1); 
-  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);   //サーボモータ2つであるのでpwm制御するpinも2つ必要
+  // HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);   //サーボモータ2つであるのでpwm制御するpinも2つ必要
   /* USER CODE END 2 */
 
-  /* Infinite loop */
+    /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */
     /* USER CODE BEGIN 3 */
-  //  __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,70);
-  // HAL_Delay(1000);
-  // __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,80);  //動作確認用のプログラム
-  // HAL_Delay(1000);                                 //canの所をコメントアウトしてここをコメントじゃなくする。
-  // __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,99);
-  // HAL_Delay(5000);
+    __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,51);
+    HAL_Delay(1000);
+    __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,88);
+    HAL_Delay(5000);
   }
-  /* USER CODE END 3 */
 }
+  /* USER CODE END 3 */
 
 /**
   * @brief System Clock Configuration
