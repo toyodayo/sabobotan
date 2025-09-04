@@ -18,7 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
+#include"stdio.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -44,8 +44,13 @@ FDCAN_HandleTypeDef hfdcan1;
 
 TIM_HandleTypeDef htim2;
 
-/* USER CODE BEGIN PV */
+UART_HandleTypeDef huart2;
 
+/* USER CODE BEGIN PV */
+FDCAN_TxHeaderTypeDef TxHeader;
+FDCAN_RxHeaderTypeDef RxHeader;
+uint8_t TxData[8] = {};
+uint8_t RxData[8] = {}; 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -53,13 +58,82 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_FDCAN1_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)  //callback関数はmainの中に入れなくてもいい
+{
+  if((RxFifo0ITs & FDCAN_IT_RX_FIFO1_NEW_MESSAGE) != RESET)
+  {
+    if (HAL_FDCAN_GetRxMessage(&hfdcan1, FDCAN_RX_FIFO1, &RxHeader, RxData) != HAL_OK) {
+      printf("fdcan_getrxmessage is error\r\n");
+      Error_Handler();
+    }
+    
+    if (RxHeader.Identifier == 0x020){  
+      // printf("%d\n",RxData[0]);
+      if(RxData[0]){
+        printf("s\n");
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 51);
+      }                              //ここは自動機なのでボタンではない。
+      else{                          //rxData[0]==1の時動く
+        // printf("b\n");
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 88);
+      }
+    } 
+  }
+}
+void FDCAN_RxTxSettings(void){
+	FDCAN_FilterTypeDef FDCAN_Filter_settings;
+	FDCAN_Filter_settings.IdType = FDCAN_STANDARD_ID;
+	FDCAN_Filter_settings.FilterIndex = 0;
+	FDCAN_Filter_settings.FilterType = FDCAN_FILTER_RANGE;
+	FDCAN_Filter_settings.FilterConfig = FDCAN_FILTER_TO_RXFIFO1;
+	FDCAN_Filter_settings.FilterID1 = 0x000;
+	FDCAN_Filter_settings.FilterID2 = 0xfff;
 
+	TxHeader.Identifier = 0x400;
+	TxHeader.IdType = FDCAN_STANDARD_ID;
+	TxHeader.TxFrameType = FDCAN_DATA_FRAME;
+	TxHeader.DataLength = FDCAN_DLC_BYTES_8;
+	TxHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+	TxHeader.BitRateSwitch = FDCAN_BRS_ON;
+	TxHeader.FDFormat = FDCAN_FD_CAN;
+	TxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+	TxHeader.MessageMarker = 0;
+
+
+	if (HAL_FDCAN_ConfigFilter(&hfdcan1, &FDCAN_Filter_settings) != HAL_OK){
+		printf("fdcan_configfilter is error\r\n");
+		Error_Handler();
+	}
+
+	if (HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_REJECT, FDCAN_FILTER_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE) != HAL_OK){
+		printf("fdcan_configglobalfilter is error\r\n");
+		Error_Handler();
+	}
+
+	if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK) {
+		printf("fdcan_start is error\r\n");
+		Error_Handler();
+	}
+
+	if (HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO1_NEW_MESSAGE, 0) != HAL_OK){
+		printf("fdcan_activatenotification is error\r\n");
+		Error_Handler();
+	}
+}
+
+// for printf()
+int _write(int file, char *ptr, int len)
+{
+    HAL_UART_Transmit(&huart2,(uint8_t *)ptr,len,10);
+    return len;
+}
 /* USER CODE END 0 */
 
 /**
@@ -70,6 +144,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
+  setbuf(stdout,NULL);
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -92,6 +167,7 @@ int main(void)
   MX_GPIO_Init();
   MX_FDCAN1_Init();
   MX_TIM2_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);  
   /* USER CODE END 2 */
@@ -103,14 +179,14 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,51);
-  HAL_Delay(2000);
-  __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,60);
-  HAL_Delay(2000);
-  __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,80);
-  HAL_Delay(2000);
-  __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,99);
-  HAL_Delay(2000);
+  // __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,51);
+  // HAL_Delay(2000);
+  // __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,60);
+  // HAL_Delay(2000);
+  // __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,80);
+  // HAL_Delay(2000);
+  // __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,99);
+  // HAL_Delay(2000);
   }
   /* USER CODE END 3 */
 }
@@ -277,13 +353,60 @@ static void MX_TIM2_Init(void)
 }
 
 /**
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART2_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART2_Init 0 */
+
+  /* USER CODE END USART2_Init 0 */
+
+  /* USER CODE BEGIN USART2_Init 1 */
+
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 115200;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetTxFifoThreshold(&huart2, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetRxFifoThreshold(&huart2, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_DisableFifoMode(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART2_Init 2 */
+
+  /* USER CODE END USART2_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
   */
 static void MX_GPIO_Init(void)
 {
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
   /* USER CODE BEGIN MX_GPIO_Init_1 */
 
   /* USER CODE END MX_GPIO_Init_1 */
@@ -291,14 +414,6 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
-
-  /*Configure GPIO pins : PA2 PA3 */
-  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF7_USART2;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
