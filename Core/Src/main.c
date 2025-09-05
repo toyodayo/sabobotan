@@ -75,7 +75,6 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
     }
     
     if (RxHeader.Identifier == 0x020){  
-      printf("%d\n",RxData[0]);
       if(RxData[0]){
         __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 51);
       }                              //ここは自動機なのでボタンではない。
